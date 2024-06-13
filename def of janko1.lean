@@ -48,8 +48,40 @@ lemma cent_normal_in_norm (H : Type*) [Group H] (K : Subgroup H) :
   set N := Subgroup.normalizer (K : Subgroup H)
   set C := Subgroup.centralizer (K : Set H)
   have hc : C ≤ N := by
-    sorry
-  sorry
+    intro x hx
+    rw [Subgroup.mem_centralizer_iff] at hx
+    rw [Subgroup.mem_normalizer_iff]
+    intro h
+    constructor
+    intro hk
+    rw [← hx, mul_assoc, mul_inv_self, mul_one]
+    exact hk
+    simpa
+    intro hK
+    have hq : ∃ (q : K), x * h * x⁻¹ = q := by
+      use ⟨(x * h * x⁻¹), hK⟩
+    obtain ⟨q,hq⟩ := hq
+    rw [mul_inv_eq_iff_eq_mul, hx, mul_left_cancel_iff] at hq
+    rw [hq]
+    simp
+    simp
+  rw [Subgroup.normal_subgroupOf_iff]
+  intro c n hc hn
+  have hninv : n⁻¹ ∈ N := by
+    apply Subgroup.inv_mem
+    exact hn
+  rw [Subgroup.mem_normalizer_iff, inv_inv] at hninv
+  rw [Subgroup.mem_centralizer_iff] at hc
+  rw [Subgroup.mem_centralizer_iff]
+  intro k hk
+  repeat rw [← mul_assoc]
+  rw [← eq_mul_inv_iff_mul_eq]
+  repeat rw [mul_assoc]
+  rw [← inv_mul_eq_iff_eq_mul,inv_inv,← mul_assoc,← mul_assoc, hc, mul_assoc]
+  simp at hk
+  simp
+  rwa [← hninv]
+  exact hCN
 
 lemma Sylow_is_cent (S : Sylow 2 G) :
   Subgroup.centralizer (S : Set G) = S := by
@@ -240,7 +272,13 @@ lemma div_two_odd_1 (n : ℕ) (hn : Odd n) : n ∣ 2 → n = 1 := by
   exact zero_lt_two
 
 lemma index2_normal (H : Subgroup G) (h2 : H.index = 2) : H.Normal := by
-  sorry
+  rw [normal_iff_eq_cosets]
+  intro g
+  by_cases hg : g ∈ H
+  · rw [leftCoset_mem_leftCoset]
+    rwa [rightCoset_mem_rightCoset]
+    exact hg
+  · sorry
 
 lemma index_2_contains_odd_elements (H : Subgroup G) (H2: H.index = 2) :
   ∀(g : G), Odd (orderOf g) → g ∈ H := by
@@ -284,9 +322,9 @@ lemma Sylow_in_H_odd_index (H : Subgroup G) [H.Normal] (Geven : Even (Fintype.ca
     exact hS2group
   obtain ⟨m, hm⟩ := hcardS
   have hsdvdS : orderOf s ∣ 2^m := by
-    symm at hm
-    rw [hm]
-    sorry
+    rw [← hm, ← Nat.card_eq_fintype_card]
+    apply Subgroup.orderOf_dvd_natCard at hs
+    exact hs
   have hs : ∃ n ≤ m, orderOf s = 2^n := by
     rw [Nat.dvd_prime_pow] at hsdvdS
     exact hsdvdS
@@ -371,18 +409,37 @@ lemma intersect_Sylow_empty_odd_order (H : Subgroup G) [HN: H.Normal] (S : Sylow
 -- lemma intersect_Hacc_S_non_triv
 lemma intersect_Hacc_S_non_triv (H : Subgroup G) [H.Normal] (Hodd : Odd H.index) (S : Sylow 2 G):
   (InterIndex2 G) ⊓ S ≠ ⊥ := by
+  intro HS
+  have Haccnorm : (InterIndex2 G).Normal := by
+    have Haccchar : (InterIndex2 G).Characteristic := by
+      apply Hacc_char
+    sorry
+  have Haccodd : Odd (Fintype.card (InterIndex2 G)) := by
+    apply intersect_Sylow_empty_odd_order
+    simpa
+  have Hacc1 : (InterIndex2 G) = ⊥ := by
+    apply normal_odd_ord_subgroup_trivial
+    exact Haccodd
+  have Helodd : ∀ h : H, Even (orderOf h) := by
+    sorry
   sorry
 
 -- No proper normal subgroups of G of odd index
 theorem normal_odd_ind_subgroup_G (H : Subgroup G) [H.Normal] (Hodd : Odd H.index) :
   H = ⊤ := by
-  set S := Sylow 2 G
-  have SH : (S : Subgroup G) ≤ H := by
+  let S : Sylow 2 G := default
+  have SH : S ≤ H := by
     apply Sylow_in_H_odd_index
-    rw [even_iff_two_dvd]
-    apply G_even_order
     exact Hodd
-  have HSinv : ∃ i ∈ ((InterIndex2 G) ⊓ S), orderOf i = 2 := by
+  have HStriv : (InterIndex2 G) ⊓ S ≠ ⊥ := by
+    sorry
+  have HSinv : ∃ i ∈ ((InterIndex2 G) ⊓ S), orderOf i ≠ 1 := by
+    rw [← Subgroup.nontrivial_iff_ne_bot] at HStriv
+    rw [nontrivial_iff] at HStriv
+    obtain ⟨x,y,hxy⟩ := HStriv
+    sorry
+  obtain ⟨i,hi⟩ := HSinv
+  have iord : orderOf i = 2 := by
     sorry
   have SinH : S ≤ (InterIndex2 G) := by
     sorry
