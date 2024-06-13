@@ -47,7 +47,7 @@ lemma cent_normal_in_norm (H : Type*) [Group H] (K : Subgroup H) :
   ((Subgroup.centralizer K).subgroupOf (Subgroup.normalizer K)).Normal := by
   set N := Subgroup.normalizer (K : Subgroup H)
   set C := Subgroup.centralizer (K : Set H)
-  have hc : C ≤ N := by
+  have hCN : C ≤ N := by
     intro x hx
     rw [Subgroup.mem_centralizer_iff] at hx
     rw [Subgroup.mem_normalizer_iff]
@@ -249,7 +249,7 @@ def InterIndex2 : Subgroup G :=
   ⨅ (K : Subgroup G) (_hK : K.index = 2), K
 
 -- The quotient group H/H′ is a 2-group
-instance : Subgroup.Characteristic (InterIndex2 G) := sorry
+lemma Hacc_char : Subgroup.Characteristic (InterIndex2 G) := sorry
 
 lemma index_2_contains_squares (H : Subgroup G) (H2 : H.index=2) (g : G) :
   g * g ∈ H := by
@@ -312,7 +312,7 @@ lemma pow_two_odd_1 (n : ℕ) (k : ℕ) (h2 : n = 2^k) : Odd n → k=0 := by
     exact h
   rwa [← even_iff_two_dvd, Nat.even_iff_not_odd] at hdvd2
 
-lemma Sylow_in_H_odd_index (H : Subgroup G) [H.Normal] (Geven : Even (Fintype.card G)) (Hodd : Odd H.index) (S : Sylow 2 G):
+lemma Sylow_in_H_odd_index (H : Subgroup G) [H.Normal] (Hodd : Odd H.index) (S : Sylow 2 G):
   S ≤ H := by
   intro s hs
   have hS2group : IsPGroup 2 (S : Sylow 2 G) := by
