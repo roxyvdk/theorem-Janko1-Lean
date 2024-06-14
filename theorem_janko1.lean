@@ -38,7 +38,7 @@ theorem Sylow_conjugates (S₁ : Sylow 2 G) (S₂ : Sylow 2 G):
 -- All involutions of G are conjugated
 -- Sylow 2-subgroups of G are of the type [2,2,2]
 lemma type_222 (S : Sylow 2 G) :
-  ∀ (s : S), (s ≠ 1) → orderOf s = 2 := by
+  ∀ (s : G), s ∈ S → (s ≠ 1) → orderOf s = 2 := by
   intro s hs
   sorry
 
@@ -97,7 +97,7 @@ lemma Sylow_is_cent (S : Sylow 2 G) :
 
 -- theorem 2nd_grun
 
--- lemma
+-- lemma cor_2nd_grun
 
 lemma normalizer_S_order_168 (S : Sylow 2 G) :
   Fintype.card (Subgroup.normalizer (S : Subgroup G)) = 168 := by
@@ -113,7 +113,7 @@ theorem involutions_conjugated (ι₁ ι₂ : G) (H₁ : orderOf ι₁ = 2) (H�
   sorry
 
 -- On centralizers of involutions of G
--- lemma conj_subgroup_cong_subgroup
+-- lemma conj_subgroup_cong_subgroup (H : Subgroup G) (g : G)
 
 lemma inv_cent (i : G) (hi: orderOf i = 2) :
   Subgroup.centralizer {i} ≃* Subgroup.closure {i} × alternatingGroup (Fin 5) := by
@@ -182,14 +182,17 @@ theorem normal_odd_ord_subgroup_trivial (H : Subgroup G) [H.Normal] (Hodd : Odd 
 
 -- On normal subgroups of G of odd index
 -- Frattini's argument
-theorem Frattini (H : Subgroup G) (hN : IsNormalSubgroup (H : Set G)) (S : Sylow 2 H) :
-  Subgroup.normalizer ((S : Subgroup H).map H.subtype) ⊔ H = G := by
-  have hgSgH : ∀ g : G, ∀ s : S, g * s * g⁻¹ ∈ H := by
+theorem Frattini (H : Subgroup G) [hN : H.Normal] (S : Sylow 2 H) :
+  Subgroup.normalizer ((S : Subgroup H).map H.subtype) ⊔ H = ⊤ := by
+  have hgSgH : ∀ (g : G), ∀ (s : S), g * s * g⁻¹ ∈ H := by
     intro g s
-    apply IsNormalSubgroup.normal
-    exact hN
-    sorry
+    apply Subgroup.Normal.conj_mem at hN
+    apply hN
+    simp
+--  have Sconj: ∀ (g : G), ∀ (s : S), ∃ (h : H), ((g⁻¹ * h) * s * (g⁻¹ * h)⁻¹) ∈ S := by
+--    sorry
   sorry
+-- In Mathlib June, 5 --> import Mathlib.GroupTheory.Frattini
 
 --The centralizers of involutions are contained in H
 lemma ord_phi_x_div_ord_x (H : Type*) [Group H] (f : G →* H) (g : G) :
@@ -245,31 +248,34 @@ lemma cent_in_H_odd_ind (H : Subgroup G) [H.Normal] (Hodd : Odd H.index) (ι : G
   sorry
 
 -- On the intersection of subgroups H of index 2
-def InterIndex2 : Subgroup G :=
-  ⨅ (K : Subgroup G) (_hK : K.index = 2), K
+variable {G} in
+def InterIndex2 (H : Subgroup G) : Subgroup G :=
+  H ⊓ ⨅ (K : Subgroup G) (_ : K.relindex H = 2) (_ : K ≤ H), K
+
+variable (H : Subgroup G)
+
+lemma InterIndex2_le_self : InterIndex2 H ≤ H := by
+  apply inf_le_left
 
 -- The quotient group H/H′ is a 2-group
-lemma Hacc_char : Subgroup.Characteristic (InterIndex2 G) := sorry
+lemma Hacc_char : Subgroup.Characteristic ((InterIndex2 H).subgroupOf H) := sorry
 
 lemma index_2_contains_squares (H : Subgroup G) (H2 : H.index=2) (g : G) :
   g * g ∈ H := by
   apply Subgroup.mul_self_mem_of_index_two
   exact H2
 
-lemma index_InterIndex2 : ∃ k : ℕ, (InterIndex2 G).index = 2^k := sorry
+lemma index_InterIndex2 : ∃ k : ℕ, (InterIndex2 H).relindex H = 2^k := by
+  sorry
 
 -- H′ intersected with S is not trivial
 lemma div_two_odd_1 (n : ℕ) (hn : Odd n) : n ∣ 2 → n = 1 := by
   intro h
-  have hn1 : n ∣ 2 := by
-    exact h
-  apply Nat.le_of_dvd at hn1
   apply div_two_1or2 at h
   cases h with
   | inl h => exact h
   | inr h => rw [h] at hn
              contradiction
-  exact zero_lt_two
 
 lemma index2_normal (H : Subgroup G) (h2 : H.index = 2) : H.Normal := by
   rw [normal_iff_eq_cosets]
@@ -302,6 +308,10 @@ lemma index_2_contains_odd_elements (H : Subgroup G) (H2: H.index = 2) :
   rw [orderOf_eq_one_iff] at hgH1
   rw [← QuotientGroup.eq_one_iff]
   exact hgH1
+
+lemma index_odd_of_contains_order_2 (H : Subgroup G) [H.Normal] (hH: ∀ g : G, orderOf g = 2 → g ∈ H) :
+    Odd H.index := by
+    sorry
 
 lemma pow_two_odd_1 (n : ℕ) (k : ℕ) (h2 : n = 2^k) : Odd n → k=0 := by
   contrapose!
@@ -406,18 +416,16 @@ lemma intersect_Sylow_empty_odd_order (H : Subgroup G) [HN: H.Normal] (S : Sylow
   simpa
   simpa
 
--- lemma intersect_Hacc_S_non_triv
 lemma intersect_Hacc_S_non_triv (H : Subgroup G) [H.Normal] (Hodd : Odd H.index) (S : Sylow 2 G):
-  (InterIndex2 G) ⊓ S ≠ ⊥ := by
+  (InterIndex2 H) ⊓ S ≠ ⊥ := by
   intro HS
-  have Haccnorm : (InterIndex2 G).Normal := by
-    have Haccchar : (InterIndex2 G).Characteristic := by
-      apply Hacc_char
+  have Haccnorm : (InterIndex2 H).Normal := by
+    have Haccchar := Hacc_char G H
     sorry
-  have Haccodd : Odd (Fintype.card (InterIndex2 G)) := by
+  have Haccodd : Odd (Fintype.card (InterIndex2 H)) := by
     apply intersect_Sylow_empty_odd_order
     simpa
-  have Hacc1 : (InterIndex2 G) = ⊥ := by
+  have Hacc1 : (InterIndex2 H) = ⊥ := by
     apply normal_odd_ord_subgroup_trivial
     exact Haccodd
   have Helodd : ∀ h : H, Even (orderOf h) := by
@@ -427,39 +435,85 @@ lemma intersect_Hacc_S_non_triv (H : Subgroup G) [H.Normal] (Hodd : Odd H.index)
 -- No proper normal subgroups of G of odd index
 theorem normal_odd_ind_subgroup_G (H : Subgroup G) [H.Normal] (Hodd : Odd H.index) :
   H = ⊤ := by
+  have HaccN : (InterIndex2 H).Normal := by
+    sorry
   let S : Sylow 2 G := default
   have SH : S ≤ H := by
     apply Sylow_in_H_odd_index
     exact Hodd
-  have HStriv : (InterIndex2 G) ⊓ S ≠ ⊥ := by
-    sorry
-  have HSinv : ∃ i ∈ ((InterIndex2 G) ⊓ S), orderOf i ≠ 1 := by
+  have HStriv : (InterIndex2 H) ⊓ S ≠ ⊥ := by
+    apply intersect_Hacc_S_non_triv
+    exact Hodd
+  obtain ⟨i,hi,hi2⟩ : ∃ i ∈ ((InterIndex2 H) ⊓ S), orderOf i = 2 := by
     rw [← Subgroup.nontrivial_iff_ne_bot] at HStriv
-    rw [nontrivial_iff] at HStriv
-    obtain ⟨x,y,hxy⟩ := HStriv
+    obtain ⟨i, hi⟩ := exists_ne (1 : ↥(InterIndex2 H ⊓ S))
+    use i, i.prop
+    have := type_222 G S i i.prop.right
+    simp at this ⊢
+    apply this hi
+  have SinH : S ≤ (InterIndex2 H) := by
+    intro j hj
+    by_cases hj1 : j = 1
+    · rw [hj1]
+      apply Subgroup.one_mem
+    · rw [← not_ne_iff] at hj1
+      apply of_not_not at hj1
+      have hj2 := type_222 G S j hj hj1
+      have := involutions_conjugated G i j hi2 hj2
+      rw [isConj_iff] at this
+      obtain ⟨c,hc⟩ := this
+      rw [← hc]
+      apply Subgroup.Normal.conj_mem at HaccN
+      apply HaccN
+      exact hi.left
+  have Hquot : Odd ((InterIndex2 H).relindex H) := by
     sorry
-  obtain ⟨i,hi⟩ := HSinv
-  have iord : orderOf i = 2 := by
-    sorry
-  have SinH : S ≤ (InterIndex2 G) := by
-    sorry
-  have Hquot : Odd (InterIndex2 G).index := by
-    sorry
-  have H2 : ∃ k : ℕ, (InterIndex2 G).index = 2^k := by
+  have H2 : ∃ k : ℕ, (InterIndex2 H).relindex H = 2^k := by
     apply index_InterIndex2
-  have H1 : (InterIndex2 G).index = 1 := by
+  have H1 : (InterIndex2 H).relindex H = 1 := by
     obtain ⟨k,hk⟩ := H2
     rw [hk] at Hquot
-    sorry
-  have HH : (InterIndex2 G) = ⊤ := by
-    rwa [Subgroup.index_eq_one] at H1
+    cases k
+    · simp only [Nat.zero_eq, pow_zero] at hk
+      apply hk
+    simp [pow_succ] at Hquot
+  have HH : (InterIndex2 H) = H := by
+    rw [Subgroup.relindex_eq_one] at H1
+    apply le_antisymm (InterIndex2_le_self G H) H1
   have Hjanko : IsJanko1 H := by
     have Hind2 : ∀(H: Subgroup G), H.index ≠ 2 := by
       sorry
     sorry
---  set NH := Subgroup.normalizer (S : Subgroup H)
+  set NH := Subgroup.normalizer (S.subgroupOf H)
   set NG := Subgroup.normalizer (S : Subgroup G)
-  sorry
+  let S' : Sylow 2 H :=
+  { __ := S.subgroupOf H,
+    isPGroup' := ?_,
+    is_maximal' := ?_ }
+
+  rw [← Frattini G H S', right_eq_sup]
+  have : Subgroup.map (Subgroup.subtype H) ↑S' = S := by
+    sorry
+  rw [this]
+  set NGS := Subgroup.normalizer (S : Subgroup G)
+  set NHS := Subgroup.normalizer (S' : Subgroup H)
+  have cardNGS : Fintype.card NGS = 168 := by
+    apply normalizer_S_order_168
+  have cardNHS : Fintype.card NHS = 168 := by
+    apply normalizer_S_order_168
+  have : Subgroup.map (Subgroup.subtype H) NHS ≤ NGS := by
+    rw [Subgroup.map_le_iff_le_comap]
+    simp
+    sorry
+  have : Subgroup.map (Subgroup.subtype H) NHS = NGS := by
+    sorry
+  rw [← this]
+  rw [Subgroup.map_le_iff_le_comap]
+  simp
+  · simp
+    sorry
+  · simp
+    sorry
 
 -- Proof of theorem
 
@@ -472,11 +526,6 @@ instance : Nontrivial G where
     apply_fun orderOf at h
     rw [hι.1,orderOf_one] at h
     contradiction
-
-
-lemma index_odd_of_contains_order_2
-    (H : Subgroup G) [H.Normal] (hH: ∀ g : G, orderOf g = 2 → g ∈ H) : Odd H.index := by
-     sorry
 
 /-- A group of Janko 1 type is simple. -/
 instance : IsSimpleGroup G where
