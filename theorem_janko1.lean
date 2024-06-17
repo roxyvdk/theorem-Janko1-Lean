@@ -184,15 +184,7 @@ theorem normal_odd_ord_subgroup_trivial (H : Subgroup G) [H.Normal] (Hodd : Odd 
 -- Frattini's argument
 theorem Frattini (H : Subgroup G) [hN : H.Normal] (S : Sylow 2 H) :
   Subgroup.normalizer ((S : Subgroup H).map H.subtype) ⊔ H = ⊤ := by
-  have hgSgH : ∀ (g : G), ∀ (s : S), g * s * g⁻¹ ∈ H := by
-    intro g s
-    apply Subgroup.Normal.conj_mem at hN
-    apply hN
-    simp
---  have Sconj: ∀ (g : G), ∀ (s : S), ∃ (h : H), ((g⁻¹ * h) * s * (g⁻¹ * h)⁻¹) ∈ S := by
---    sorry
-  sorry
--- In Mathlib June, 5 --> import Mathlib.GroupTheory.Frattini
+  apply Sylow.normalizer_sup_eq_top
 
 --The centralizers of involutions are contained in H
 lemma ord_phi_x_div_ord_x (H : Type*) [Group H] (f : G →* H) (g : G) :
@@ -436,7 +428,12 @@ lemma intersect_Hacc_S_non_triv (H : Subgroup G) [H.Normal] (Hodd : Odd H.index)
 theorem normal_odd_ind_subgroup_G (H : Subgroup G) [H.Normal] (Hodd : Odd H.index) :
   H = ⊤ := by
   have HaccN : (InterIndex2 H).Normal := by
-    sorry
+    have hchar : Subgroup.Characteristic ((InterIndex2 H).subgroupOf H) := by
+      apply Hacc_char
+    apply ConjAct.normal_of_characteristic_of_normal at hchar
+    simp at hchar
+    simp [InterIndex2_le_self] at hchar
+    exact hchar
   let S : Sylow 2 G := default
   have SH : S ≤ H := by
     apply Sylow_in_H_odd_index
@@ -467,7 +464,29 @@ theorem normal_odd_ind_subgroup_G (H : Subgroup G) [H.Normal] (Hodd : Odd H.inde
       apply HaccN
       exact hi.left
   have Hquot : Odd ((InterIndex2 H).relindex H) := by
-    sorry
+    have HinH : InterIndex2 H ≤ H := by
+      apply InterIndex2_le_self
+    apply Subgroup.relindex_mul_index at HinH
+    rw [Nat.mul_comm] at HinH
+    apply Subgroup.relindex_mul_index at SinH
+    rw [← HinH] at SinH
+    rw [← Nat.mul_assoc] at SinH
+    have indS : ¬ 2 ∣ (S.index) := by
+      have hdvd : 2 ∣ (Fintype.card G) := by
+        apply G_even_order
+      have hS2 : 2 ∣ Fintype.card S := by
+        convert S.dvd_card_of_dvd_card hdvd
+      have Scardcop : (Fintype.card S).Coprime S.index := by
+        convert Sylow.card_coprime_index S
+      have Sindcop2 : (2).Coprime S.index := by
+        apply Nat.Coprime.coprime_dvd_left hS2 Scardcop
+      rw [Nat.coprime_two_left] at Sindcop2
+      simp at Sindcop2
+      rw [even_iff_two_dvd] at Sindcop2
+      exact Sindcop2
+    rw [← even_iff_two_dvd,← Nat.odd_iff_not_even,← SinH] at indS
+    rw [Nat.odd_mul] at indS
+    exact indS.2
   have H2 : ∃ k : ℕ, (InterIndex2 H).relindex H = 2^k := by
     apply index_InterIndex2
   have H1 : (InterIndex2 H).relindex H = 1 := by
@@ -483,6 +502,11 @@ theorem normal_odd_ind_subgroup_G (H : Subgroup G) [H.Normal] (Hodd : Odd H.inde
   have Hjanko : IsJanko1 H := by
     have Hind2 : ∀(H: Subgroup G), H.index ≠ 2 := by
       sorry
+    have HinvCent : ∃(ι : G), orderOf ι = 2 ∧
+    Nonempty (Subgroup.centralizer {ι} ≃* Subgroup.closure {ι} × alternatingGroup (Fin 5)) := by
+      sorry
+    have Hsylow : ∀(S: Sylow 2 G) (a b: G), a ∈ S → b ∈ S → a*b=b*a := by
+      sorry
     sorry
   set NH := Subgroup.normalizer (S.subgroupOf H)
   set NG := Subgroup.normalizer (S : Subgroup G)
@@ -493,7 +517,7 @@ theorem normal_odd_ind_subgroup_G (H : Subgroup G) [H.Normal] (Hodd : Odd H.inde
 
   rw [← Frattini G H S', right_eq_sup]
   have : Subgroup.map (Subgroup.subtype H) ↑S' = S := by
-    sorry
+    simpa
   rw [this]
   set NGS := Subgroup.normalizer (S : Subgroup G)
   set NHS := Subgroup.normalizer (S' : Subgroup H)
@@ -504,6 +528,7 @@ theorem normal_odd_ind_subgroup_G (H : Subgroup G) [H.Normal] (Hodd : Odd H.inde
   have : Subgroup.map (Subgroup.subtype H) NHS ≤ NGS := by
     rw [Subgroup.map_le_iff_le_comap]
     simp
+
     sorry
   have : Subgroup.map (Subgroup.subtype H) NHS = NGS := by
     sorry
